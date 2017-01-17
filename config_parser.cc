@@ -193,23 +193,24 @@ bool NginxConfigParser::Parse(std::istream* config_file, NginxConfig* config) {
       }
     } else if (token_type == TOKEN_TYPE_START_BLOCK) {
       
-      
+      braceNum++; // increments when encountering a starting brace
       if (last_token_type != TOKEN_TYPE_NORMAL) {
         // Error.
         break;
       }
-      braceNum++; // increments when encountering a starting brace
+
       NginxConfig* const new_config = new NginxConfig;
       config_stack.top()->statements_.back().get()->child_block_.reset(
           new_config);
       config_stack.push(new_config);
     } else if (token_type == TOKEN_TYPE_END_BLOCK) {
       
+      braceNum--; // decrements when encountering an ending brace
       if (last_token_type != TOKEN_TYPE_STATEMENT_END) {
         // Error.
         break;
       }
-      braceNum--; // decrements when encountering an ending brace
+
       config_stack.pop();
     } else if (token_type == TOKEN_TYPE_EOF) {
       if (last_token_type != TOKEN_TYPE_STATEMENT_END &&
