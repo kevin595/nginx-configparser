@@ -152,6 +152,8 @@ bool NginxConfigParser::Parse(std::istream* config_file, NginxConfig* config) {
   config_stack.push(config);
   TokenType last_token_type = TOKEN_TYPE_START;
   TokenType token_type;
+  int braceNum = 0; 
+
   while (true) {
     std::string token;
     token_type = ParseToken(config_file, &token);
@@ -190,6 +192,7 @@ bool NginxConfigParser::Parse(std::istream* config_file, NginxConfig* config) {
         break;
       }
     } else if (token_type == TOKEN_TYPE_START_BLOCK) {
+      braceNum++; // increments when encountering a starting brace
       if (last_token_type != TOKEN_TYPE_NORMAL) {
         // Error.
         break;
@@ -199,6 +202,7 @@ bool NginxConfigParser::Parse(std::istream* config_file, NginxConfig* config) {
           new_config);
       config_stack.push(new_config);
     } else if (token_type == TOKEN_TYPE_END_BLOCK) {
+      braceNum--; // decrements when encountering an ending brace
       if (last_token_type != TOKEN_TYPE_STATEMENT_END) {
         // Error.
         break;
@@ -210,12 +214,21 @@ bool NginxConfigParser::Parse(std::istream* config_file, NginxConfig* config) {
         // Error.
         break;
       }
+      if(braceNum % 2 != 0){
+        //Error: uneven number of braces
+        break; 
+      }
       return true;
     } else {
       // Error. Unknown token.
       break;
     }
     last_token_type = token_type;
+  }
+
+  if(braceNum % 2 != 0 && last_token_type == TOKEN_TYPE_END_BLOCK){
+      printf ("Uneven amount of braces\n"); 
+      return false;
   }
 
   printf ("Bad transition from %s to %s\n",
